@@ -1,5 +1,3 @@
----
-````json
 {
   "_meta": {
     "description": "AI WhatsApp Triage Agent — Main Workflow",
@@ -163,4 +161,3 @@
     "node_010": { "next": "node_011" }
   }
 }
-````
