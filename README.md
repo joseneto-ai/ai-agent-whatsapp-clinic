@@ -27,7 +27,7 @@ The result: lost revenue, degraded patient experience, and burned human capital.
 A fully autonomous AI agent deployed over WhatsApp that acts as a 
 24/7 intelligent digital concierge — triaging patients, qualifying leads, 
 collecting intake data, and routing high-intent contacts to the clinical team.
-````
+
 
 **Key capabilities:**
 - Instant response to any incoming message, at any hour
