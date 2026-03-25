@@ -1,0 +1,166 @@
+---
+````json
+{
+  "_meta": {
+    "description": "AI WhatsApp Triage Agent — Main Workflow",
+    "version": "1.3.0",
+    "author": "José Neto @zNeto.AI",
+    "note": "Sanitized export for documentation purposes. API keys, webhook URLs, and client-specific configurations have been removed. Replace all [PLACEHOLDER] values before importing."
+  },
+  "nodes": [
+    {
+      "id": "node_001",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "description": "Entry point — receives incoming WhatsApp messages via Meta webhook POST",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "[WEBHOOK_PATH]",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "node_002",
+      "name": "Message Preprocessor",
+      "type": "n8n-nodes-base.function",
+      "description": "Extracts and structures message payload from WhatsApp API format",
+      "parameters": {
+        "functionCode": "// Extracts sender ID, message text, timestamp from WhatsApp payload\n// Returns structured object for downstream nodes\n// [SANITIZED]"
+      }
+    },
+    {
+      "id": "node_003",
+      "name": "Context Manager — Load",
+      "type": "n8n-nodes-base.function",
+      "description": "Retrieves existing conversation history for the sender. Returns empty array if first interaction.",
+      "parameters": {
+        "functionCode": "// Retrieves conversation history from context store\n// Keyed by hashed WhatsApp sender ID\n// [SANITIZED]"
+      }
+    },
+    {
+      "id": "node_004",
+      "name": "LLM Triage Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Calls OpenAI GPT-4o with full conversation context and system prompt. Returns intent classification and response text.",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "headerAuth",
+        "headers": {
+          "Authorization": "Bearer [OPENAI_API_KEY]"
+        },
+        "body": {
+          "model": "gpt-4o",
+          "messages": "[CONVERSATION_HISTORY + CURRENT_MESSAGE]",
+          "temperature": 0.4,
+          "max_tokens": 500
+        }
+      }
+    },
+    {
+      "id": "node_005",
+      "name": "Intent Router",
+      "type": "n8n-nodes-base.switch",
+      "description": "Routes workflow based on LLM intent classification",
+      "parameters": {
+        "rules": [
+          { "value": "HIGH_INTENT", "output": 0 },
+          { "value": "NURTURE", "output": 1 },
+          { "value": "URGENT", "output": 2 }
+        ]
+      }
+    },
+    {
+      "id": "node_006",
+      "name": "High Intent — Qualification Flow",
+      "type": "n8n-nodes-base.function",
+      "description": "Handles HIGH_INTENT patients: collects procedure interest, preferred date, prepares handoff package",
+      "parameters": {
+        "functionCode": "// Qualification logic for high-intent patients\n// [SANITIZED]"
+      }
+    },
+    {
+      "id": "node_007",
+      "name": "Nurture Flow",
+      "type": "n8n-nodes-base.function",
+      "description": "Handles NURTURE patients: educational content delivery, soft CTA toward consultation",
+      "parameters": {
+        "functionCode": "// Nurture sequence logic\n// [SANITIZED]"
+      }
+    },
+    {
+      "id": "node_008",
+      "name": "Urgent — Staff Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Triggers immediate staff notification for URGENT cases via internal channel",
+      "parameters": {
+        "method": "POST",
+        "url": "[STAFF_ALERT_WEBHOOK]",
+        "body": {
+          "priority": "URGENT",
+          "patient_context": "[CONVERSATION_SUMMARY]",
+          "timestamp": "[ISO_TIMESTAMP]"
+        }
+      }
+    },
+    {
+      "id": "node_009",
+      "name": "Response Delivery",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Sends AI-generated response back to patient via WhatsApp Business API",
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v18.0/[PHONE_NUMBER_ID]/messages",
+        "authentication": "headerAuth",
+        "headers": {
+          "Authorization": "Bearer [META_ACCESS_TOKEN]"
+        }
+      }
+    },
+    {
+      "id": "node_010",
+      "name": "Context Manager — Save",
+      "type": "n8n-nodes-base.function",
+      "description": "Updates conversation history with current exchange. Persists to context store.",
+      "parameters": {
+        "functionCode": "// Appends current message + response to conversation history\n// [SANITIZED]"
+      }
+    },
+    {
+      "id": "node_011",
+      "name": "CRM Logger",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Logs structured lead data to CRM: patient ID, intent score, procedure interest, timestamp",
+      "parameters": {
+        "method": "POST",
+        "url": "[CRM_WEBHOOK_URL]",
+        "body": {
+          "patient_id": "[HASHED_PHONE]",
+          "intent": "[CLASSIFICATION]",
+          "lead_score": "[LLM_SCORE]",
+          "procedure_interest": "[EXTRACTED_PROCEDURE]",
+          "timestamp": "[ISO_TIMESTAMP]"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "node_001": { "next": "node_002" },
+    "node_002": { "next": "node_003" },
+    "node_003": { "next": "node_004" },
+    "node_004": { "next": "node_005" },
+    "node_005": {
+      "outputs": {
+        "0": "node_006",
+        "1": "node_007",
+        "2": "node_008"
+      }
+    },
+    "node_006": { "next": "node_009" },
+    "node_007": { "next": "node_009" },
+    "node_008": { "next": "node_009" },
+    "node_009": { "next": "node_010" },
+    "node_010": { "next": "node_011" }
+  }
+}
+````
